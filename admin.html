@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1" />
+<meta name="theme-color" content="#0b0f19" />
+<title>NextEarn — Admin Console</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+/* ==========================================================================
+   1. ULTRA PREMIUM ADMIN DESIGN TOKENS
+   ========================================================================== */
+:root {
+  --bg: #070a13;
+  --bg-gradient: radial-gradient(circle at 10% 20%, rgba(79, 172, 254, 0.1) 0%, transparent 40%);
+  --surface: rgba(30, 41, 59, 0.6);
+  --surface-solid: #0f172a;
+  --surface-2: rgba(51, 65, 85, 0.6);
+  
+  --primary: #00f2fe;
+  --primary-grad: linear-gradient(135deg, #00f2fe 0%, #4facfe 100%);
+  --accent: #f093fb;
+  --success: #10b981;
+  --danger: #ef4444;
+  --warning: #f59e0b;
+  
+  --text: #f8fafc;
+  --text-2: #cbd5e1;
+  --text-3: #64748b;
+  --border: rgba(255, 255, 255, 0.08);
+  
+  --shadow-md: 0 8px 32px rgba(0, 0, 0, 0.3);
+  --shadow-neon: 0 0 20px rgba(0, 242, 254, 0.2);
+  
+  --radius: 20px;
+  --radius-sm: 12px;
+  --font: 'Inter', 'Hind Siliguri', sans-serif;
+}
+
+/* ==========================================================================
+   2. RESETS
+   ========================================================================== */
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+body {
+  margin: 0; padding: 0; font-family: var(--font);
+  background: var(--bg); background-image: var(--bg-gradient); background-attachment: fixed;
+  color: var(--text); min-height: 100vh; padding-bottom: 50px;
+  -webkit-font-smoothing: antialiased;
+}
+button { font-family: inherit; cursor: pointer; border: none; background: none; color: inherit; }
+input, select, textarea { font-family: inherit; font-size: 15px; }
+#app { display: none; max-width: 900px; margin: 0 auto; }
+
+/* ==========================================================================
+   3. HEADER & NAV
+   ========================================================================== */
+.header { 
+  background: rgba(7, 10, 19, 0.8); backdrop-filter: blur(20px);
+  padding: 16px 20px; display: flex; justify-content: space-between; align-items: center; 
+  border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100;
+}
+.header-title { font-size: 20px; font-weight: 900; display: flex; align-items: center; gap: 10px; color: var(--primary); }
+.admin-nav { 
+  display: flex; gap: 10px; padding: 16px 20px; overflow-x: auto; 
+  background: rgba(7, 10, 19, 0.6); border-bottom: 1px solid var(--border); scrollbar-width: none; 
+}
+.admin-nav::-webkit-scrollbar { display: none; }
+.nav-btn { 
+  padding: 10px 18px; border-radius: 12px; background: var(--surface); color: var(--text-3); 
+  font-size: 14px; font-weight: 800; white-space: nowrap; transition: 0.2s; border: 1px solid var(--border);
+}
+.nav-btn.active { background: var(--primary-grad); color: #070a13; border-color: transparent; box-shadow: var(--shadow-neon); }
+
+/* ==========================================================================
+   4. LAYOUT & CARDS
+   ========================================================================== */
+.page { display: none; padding: 20px; animation: fadeUp 0.3s ease; }
+.page.active { display: block; }
+@keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+.stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; margin-bottom: 24px; }
+@media(min-width: 600px) { .stats-grid { grid-template-columns: repeat(4, 1fr); } }
+
+.stat-card { 
+  background: var(--surface); padding: 20px; border-radius: var(--radius); 
+  border: 1px solid var(--border); backdrop-filter: blur(10px);
+}
+.stat-lbl { font-size: 11px; color: var(--text-3); margin-bottom: 8px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; }
+.stat-val { font-size: 24px; font-weight: 900; color: var(--text); }
+
+.card { background: var(--surface); border-radius: var(--radius); padding: 20px; border: 1px solid var(--border); margin-bottom: 20px; backdrop-filter: blur(10px); }
+.list-item { display: flex; justify-content: space-between; align-items: center; padding: 16px 0; border-bottom: 1px solid var(--border); }
+.list-item:last-child { border-bottom: none; }
+.list-info { flex: 1; min-width: 0; }
+.list-title { font-size: 15px; font-weight: 800; margin-bottom: 6px; }
+.list-sub { font-size: 13px; color: var(--text-3); font-weight: 600; }
+
+/* ==========================================================================
+   5. BUTTONS & BADGES
+   ========================================================================== */
+.btn { padding: 12px 18px; border-radius: 12px; font-weight: 800; font-size: 13px; transition: 0.2s; display: inline-flex; align-items: center; justify-content: center; }
+.btn:active { transform: scale(0.95); }
+.btn-sm { padding: 8px 14px; font-size: 12px; border-radius: 10px; }
+.btn-primary { background: var(--primary-grad); color: #070a13; box-shadow: var(--shadow-neon); }
+.btn-success { background: rgba(16, 185, 129, 0.15); color: var(--success); border: 1px solid rgba(16, 185, 129, 0.3); }
+.btn-danger { background: rgba(239, 68, 68, 0.15); color: var(--danger); border: 1px solid rgba(239, 68, 68, 0.3); }
+.btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text-2); }
+.btn-block { width: 100%; }
+
+.badge { padding: 4px 10px; border-radius: 6px; font-size: 10px; font-weight: 900; text-transform: uppercase; }
+.badge-pending { background: rgba(245, 158, 11, 0.15); color: var(--warning); }
+.badge-open { background: rgba(16, 185, 129, 0.15); color: var(--success); }
+.badge-banned { background: rgba(239, 68, 68, 0.15); color: var(--danger); }
+
+/* ==========================================================================
+   6. FORMS & LOGIN
+   ========================================================================== */
+.field { margin-bottom: 18px; }
+.field label { display: block; font-size: 13px; font-weight: 800; color: var(--text-2); margin-bottom: 8px; }
+.input { 
+  width: 100%; padding: 16px; border-radius: 14px; background: var(--surface-solid); 
+  border: 1px solid var(--border); color: var(--text); outline: none; font-weight: 600; 
+}
+.input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(0, 242, 254, 0.1); }
+
+.login-screen { position: fixed; inset: 0; background: var(--bg); display: flex; justify-content: center; align-items: center; padding: 24px; z-index: 9999; }
+.login-box { background: var(--surface); padding: 40px 24px; border-radius: 24px; width: 100%; max-width: 400px; text-align: center; border: 1px solid var(--border); backdrop-filter: blur(20px); }
+
+/* ==========================================================================
+   7. UTILS
+   ========================================================================== */
+#toast-container { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 9999; display: flex; flex-direction: column; gap: 10px; width: 90%; max-width: 400px; pointer-events: none; }
+.toast { background: var(--surface-solid); color: #fff; padding: 16px 20px; border-radius: 14px; font-size: 14px; font-weight: 800; box-shadow: var(--shadow-md); border-left: 4px solid var(--primary); animation: fadeUp 0.3s; pointer-events: auto; }
+.toast.success { border-left-color: var(--success); }
+.toast.error { border-left-color: var(--danger); }
+.empty { text-align: center; padding: 40px 20px; color: var(--text-3); font-weight: 700; font-size: 14px; }
+
+/* MODAL */
+.modal-backdrop { position: fixed; inset: 0; z-index: 1000; background: rgba(0, 0, 0, 0.8); backdrop-filter: blur(8px); display: none; align-items: center; justify-content: center; padding: 20px; }
+.modal-backdrop.open { display: flex; animation: fadeUp 0.3s; }
+.modal { background: var(--surface-solid); width: 100%; max-width: 500px; border-radius: 24px; padding: 24px; border: 1px solid var(--border); max-height: 90vh; overflow-y: auto; }
+.modal-title { font-size: 20px; font-weight: 900; margin-bottom: 20px; display: flex; justify-content: space-between; }
+</style>
+</head>
+<body>
+
+<div id="toast-container"></div>
+
+<!-- LOGIN SCREEN -->
+<div id="loginScreen" class="login-screen">
+  <div class="login-box">
+    <div style="width: 80px; height: 80px; background: var(--primary-grad); border-radius: 24px; display: flex; align-items: center; justify-content: center; margin: 0 auto 24px; font-size: 36px; box-shadow: var(--shadow-neon);">⚙️</div>
+    <h1 style="font-size: 26px; margin: 0 0 8px; font-weight: 900;">Admin Console</h1>
+    <p style="color: var(--text-3); font-size: 14px; margin-bottom: 32px; font-weight: 600;">Enter PIN to access system</p>
+    
+    <input type="password" id="adminPin" class="input" placeholder="Enter Access PIN" style="text-align:center; font-size:20px; letter-spacing:6px; margin-bottom:20px;">
+    <button class="btn btn-primary btn-block" onclick="adminLogin()" style="padding: 18px; font-size: 16px;">Access Dashboard</button>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div id="app">
+  <div class="header">
+    <div class="header-title">⚙️ Admin Panel</div>
+    <button class="btn btn-outline btn-sm" onclick="logout()">Logout</button>
+  </div>
+
+  <div class="admin-nav">
+    <button class="nav-btn active" onclick="nav('dashboard', this)">📊 Dashboard</button>
+    <button class="nav-btn" onclick="nav('campaigns', this)">📺 Watch & Earn</button>
+    <button class="nav-btn" onclick="nav('users', this)">👥 Users</button>
+    <button class="nav-btn" onclick="nav('jobs', this)">💼 Jobs</button>
+    <button class="nav-btn" onclick="nav('services', this)">🛠️ Services</button>
+    <button class="nav-btn" onclick="nav('deposits', this)">💰 Deposits</button>
+    <button class="nav-btn" onclick="nav('withdrawals', this)">💸 Withdrawals</button>
+    <button class="nav-btn" onclick="nav('settings', this)">⚙️ Settings</button>
+  </div>
+
+  <!-- DASHBOARD PAGE -->
+  <div class="page active" id="page-dashboard">
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-lbl">Total Users</div>
+        <div class="stat-val" id="statUsers">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-lbl">Active Campaigns</div>
+        <div class="stat-val" style="color:var(--success)" id="statCampaigns">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-lbl">Pending Deposits</div>
+        <div class="stat-val" style="color:var(--primary)" id="statDeposits">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-lbl">Pending Withdraws</div>
+        <div class="stat-val" style="color:var(--danger)" id="statWithdraws">0</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- WATCH & EARN CAMPAIGNS PAGE -->
+  <div class="page" id="page-campaigns">
+    <div class="card">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+        <div class="list-title" style="font-size: 18px;">Video Campaigns</div>
+        <button class="btn btn-primary btn-sm" onclick="openAddCampaignModal()">+ Add New</button>
+      </div>
+      <div id="campaignList" class="empty">Loading campaigns...</div>
+    </div>
+  </div>
+
+  <!-- USERS PAGE -->
+  <div class="page" id="page-users">
+    <div class="card">
+      <div class="list-title" style="margin-bottom: 16px; font-size: 18px;">User Management</div>
+      <input type="text" class="input" placeholder="Search by email or name..." oninput="filterUsers(this.value)" style="margin-bottom: 20px;">
+      <div id="userList" class="empty">Loading users...</div>
+    </div>
+  </div>
+
+  <!-- JOBS PAGE -->
+  <div class="page" id="page-jobs">
+    <div class="card">
+      <div class="list-title" style="margin-bottom: 16px; font-size: 18px;">Pending Job Approvals (Escrow)</div>
+      <div id="pendingJobsList" class="empty">No pending jobs</div>
+    </div>
+  </div>
+
+  <!-- SERVICES PAGE -->
+  <div class="page" id="page-services">
+    <div class="card">
+      <div class="list-title" style="margin-bottom: 16px; font-size: 18px;">Pending Service Approvals</div>
+      <div id="pendingServicesList" class="empty">No pending services</div>
+    </div>
+  </div>
+
+  <!-- DEPOSITS PAGE -->
+  <div class="page" id="page-deposits">
+    <div class="card">
+      <div class="list-title" style="margin-bottom: 16px; font-size: 18px;">Pending Deposits</div>
+      <div id="pendingDepositsList" class="empty">No pending deposits</div>
+    </div>
+  </div>
+
+  <!-- WITHDRAWALS PAGE -->
+  <div class="page" id="page-withdrawals">
+    <div class="card">
+      <div class="list-title" style="margin-bottom: 16px; font-size: 18px;">Pending Withdrawals</div>
+      <div id="pendingWithdrawsList" class="empty">No pending withdrawals</div>
+    </div>
+  </div>
+
+  <!-- SETTINGS PAGE -->
+  <div class="page" id="page-settings">
+    <div class="card">
+      <div class="list-title" style="margin-bottom: 20px; font-size: 18px;">Global Settings</div>
+      <div class="field">
+        <label>Payment Number (bKash/Nagad)</label>
+        <input type="text" class="input" id="setPayNumber" placeholder="017XXXXXXXX">
+      </div>
+      <div class="field">
+        <label>Job Posting Fee (৳)</label>
+        <input type="number" class="input" id="setJobFee" placeholder="20">
+      </div>
+      <div class="field">
+        <label>Daily Earning Cap (৳)</label>
+        <input type="number" class="input" id="setDailyCap" placeholder="100">
+      </div>
+      <button class="btn btn-primary btn-block" onclick="saveSettings()" style="padding: 16px; margin-top: 10px;">Save Settings</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADD CAMPAIGN MODAL -->
+<div class="modal-backdrop" id="addCampaignModal">
+  <div class="modal">
+    <div class="modal-title">
+      Create Campaign
+      <button onclick="closeModal('addCampaignModal')" style="color:var(--text-3); font-size:20px;">✕</button>
+    </div>
+    <div class="field"><label>Campaign Title</label><input type="text" id="cmpTitle" class="input" placeholder="e.g. Sponsor Video Ad"></div>
+    <div class="field"><label>Video URL (MP4/Direct)</label><input type="text" id="cmpVideoUrl" class="input" placeholder="https://..."></div>
+    <div class="field"><label>Duration (Seconds)</label><input type="number" id="cmpDuration" class="input" value="15"></div>
+    <div class="field"><label>Reward Amount (৳)</label><input type="number" step="0.01" id="cmpReward" class="input" value="0.50"></div>
+    <button class="btn btn-primary btn-block" onclick="submitCampaign()" style="padding:16px; margin-top:10px;">Create Campaign</button>
+  </div>
+</div>
+
+<script type="module">
+/* ==========================================================================
+   1. FIREBASE SDK INITIALIZATION
+   ========================================================================== */
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { 
+  getAuth, signInAnonymously 
+} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { 
+  getFirestore, doc, getDoc, setDoc, updateDoc, addDoc, deleteDoc,
+  collection, query, where, getDocs, serverTimestamp 
+} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+// আপনার আসল ফায়ারবেস কনফিগারেশন
+const firebaseConfig = {
+  apiKey: "AIzaSyCAq8GaWgBkiXyH0SPo-5x565tFept3ykM",
+  authDomain: "acebo-13bc7.firebaseapp.com",
+  databaseURL: "https://acebo-13bc7-default-rtdb.firebaseio.com",
+  projectId: "acebo-13bc7",
+  storageBucket: "acebo-13bc7.firebasestorage.app",
+  messagingSenderId: "50304086098",
+  appId: "1:50304086098:web:76f7bfd458340f8905af8b"
+};
+
+const ADMIN_PIN = "NBH"; 
+
+let app, auth, db;
+try {
+  app = initializeApp(firebaseConfig);
+  auth = getAuth(app);
+  db = getFirestore(app);
+  signInAnonymously(auth).catch(e => console.log("Auth warning:", e));
+} catch (e) {
+  console.error("Firebase Init Error:", e);
+}
+
+/* ==========================================================================
+   2. STATE
+   ========================================================================== */
+const adminState = {
+  users: [],
+  campaigns: [],
+  jobs: [],
+  services: [],
+  deposits: [],
+  withdrawals: [],
+  settings: { paymentNumber: "017XXXXXXXX", jobPostingFee: 20, dailyEarningCap: 100 }
+};
+
+/* ==========================================================================
+   3. UI HELPERS
+   ========================================================================== */
+function toast(msg, type='info'){
+  const c = document.getElementById('toast-container');
+  const el = document.createElement('div');
+  el.className = 'toast ' + (type==='success'?'success':type==='error'?'error':'');
+  el.textContent = msg;
+  c.appendChild(el);
+  setTimeout(()=>el.remove(), 3500);
+}
+
+function nav(page, btn) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-' + page).classList.add('active');
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+function closeModal(id){ document.getElementById(id).classList.remove('open'); }
+
+/* ==========================================================================
+   4. LOGIN
+   ========================================================================== */
+function adminLogin() {
+  const pin = document.getElementById('adminPin').value;
+  if(pin === ADMIN_PIN) {
+    sessionStorage.setItem('admin_logged_in', 'true');
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+    loadAdminData();
+  } else {
+    toast('Invalid PIN', 'error');
+  }
+}
+
+function logout() {
+  sessionStorage.removeItem('admin_logged_in');
+  location.reload();
+}
+
+/* ==========================================================================
+   5. LOAD DATA FROM FIRESTORE
+   ========================================================================== */
+async function loadAdminData() {
+  try {
+    // Settings
+    const setSnap = await getDoc(doc(db, 'settings', 'app'));
+    if(setSnap.exists()) adminState.settings = setSnap.data();
+
+    // Users
+    const usersSnap = await getDocs(collection(db, 'users'));
+    adminState.users = usersSnap.docs.map(d => ({ uid: d.id, ...d.data() }));
+
+    // Campaigns (Watch & Earn)
+    const cmpSnap = await getDocs(collection(db, 'campaigns'));
+    adminState.campaigns = cmpSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+    // Pending Jobs
+    const jobsQuery = query(collection(db, 'jobs'), where('status', '==', 'pending'));
+    const jobsSnap = await getDocs(jobsQuery);
+    adminState.jobs = jobsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+    // Pending Services
+    const svcQuery = query(collection(db, 'services'), where('status', '==', 'pending'));
+    const svcSnap = await getDocs(svcQuery);
+    adminState.services = svcSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+    // Pending Deposits
+    const depQuery = query(collection(db, 'deposits'), where('status', '==', 'pending'));
+    const depSnap = await getDocs(depQuery);
+    adminState.deposits = depSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+    // Pending Withdrawals
+    const wdQuery = query(collection(db, 'withdrawals'), where('status', '==', 'pending'));
+    const wdSnap = await getDocs(wdQuery);
+    adminState.withdrawals = wdSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+    renderAdminData();
+
+  } catch(e) {
+    console.error(e);
+    toast('Failed to load data from Firebase', 'error');
+  }
+}
+
+/* ==========================================================================
+   6. RENDER FUNCTIONS
+   ========================================================================== */
+function renderAdminData() {
+  document.getElementById('statUsers').textContent = adminState.users.length;
+  document.getElementById('statCampaigns').textContent = adminState.campaigns.length;
+  document.getElementById('statDeposits').textContent = adminState.deposits.length;
+  document.getElementById('statWithdraws').textContent = adminState.withdrawals.length;
+
+  renderUsers(adminState.users);
+  renderCampaigns();
+  renderJobs();
+  renderServices();
+  renderDeposits();
+  renderWithdrawals();
+
+  document.getElementById('setPayNumber').value = adminState.settings.paymentNumber || "017XXXXXXXX";
+  document.getElementById('setJobFee').value = adminState.settings.jobPostingFee || 20;
+  document.getElementById('setDailyCap').value = adminState.settings.dailyEarningCap || 100;
+}
+
+function renderUsers(users) {
+  const el = document.getElementById('userList');
+  if(!users.length) { el.innerHTML = 'No users found'; return; }
+  
+  el.innerHTML = users.map(u => `
+    <div class="list-item">
+      <div class="list-info">
+        <div class="list-title">
+          ${u.firstName || 'User'} 
+          <span class="badge ${u.status === 'banned' ? 'badge-banned' : 'badge-open'}">${u.status || 'active'}</span>
+        </div>
+        <div class="list-sub">${u.email} • Bal: ৳${(u.balance||0).toFixed(2)} • Escrow: ৳${(u.escrow||0).toFixed(2)}</div>
+        <div class="list-sub" style="font-size:11px; color:var(--primary);">ID: ${u.userId || 'N/A'}</div>
+      </div>
+      <div style="display:flex; gap:8px; flex-direction:column;">
+        <button class="btn btn-sm btn-outline" onclick="editBalance('${u.uid}')">Edit Balance</button>
+        <button class="btn btn-sm ${u.status === 'banned' ? 'btn-success' : 'btn-danger'}" onclick="toggleBan('${u.uid}', '${u.status||'active'}')">
+          ${u.status === 'banned' ? 'Unban' : 'Ban'}
+        </button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderCampaigns() {
+  const el = document.getElementById('campaignList');
+  if(!adminState.campaigns.length) { el.innerHTML = 'No campaigns found. Click "+ Add New" to create one.'; return; }
+  
+  el.innerHTML = adminState.campaigns.map(c => `
+    <div class="list-item">
+      <div class="list-info">
+        <div class="list-title">${c.title}</div>
+        <div class="list-sub">Duration: ${c.duration}s • Reward: ৳${c.reward.toFixed(2)}</div>
+      </div>
+      <div>
+        <button class="btn btn-sm btn-danger" onclick="deleteCampaign('${c.id}')">Delete</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderJobs() {
+  const el = document.getElementById('pendingJobsList');
+  if(!adminState.jobs.length) { el.innerHTML = 'No pending jobs'; return; }
+  
+  el.innerHTML = adminState.jobs.map(j => `
+    <div class="list-item">
+      <div class="list-info">
+        <div class="list-title">${j.title}</div>
+        <div class="list-sub">Client: ${j.clientEmail}</div>
+        <div class="list-sub" style="color:var(--primary); font-weight:800; margin-top:4px;">Budget: ৳${j.price} × ${j.workers} workers = ৳${j.price * j.workers}</div>
+      </div>
+      <div style="display:flex; gap:8px;">
+        <button class="btn btn-sm btn-success" onclick="approveJob('${j.id}')">Approve</button>
+        <button class="btn btn-sm btn-danger" onclick="rejectJob('${j.id}')">Reject</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderServices() {
+  const el = document.getElementById('pendingServicesList');
+  if(!adminState.services.length) { el.innerHTML = 'No pending services'; return; }
+  
+  el.innerHTML = adminState.services.map(s => `
+    <div class="list-item">
+      <div class="list-info">
+        <div class="list-title">${s.title}</div>
+        <div class="list-sub">Price: ৳${s.price}</div>
+      </div>
+      <div style="display:flex; gap:8px;">
+        <button class="btn btn-sm btn-success" onclick="approveService('${s.id}')">Approve</button>
+        <button class="btn btn-sm btn-danger" onclick="rejectService('${s.id}')">Reject</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderDeposits() {
+  const el = document.getElementById('pendingDepositsList');
+  if(!adminState.deposits.length) { el.innerHTML = 'No pending deposits'; return; }
+  
+  el.innerHTML = adminState.deposits.map(d => `
+    <div class="list-item">
+      <div class="list-info">
+        <div class="list-title">৳${d.amount} - ${d.userName}</div>
+        <div class="list-sub">TRX: ${d.trxId}</div>
+      </div>
+      <div style="display:flex; gap:8px;">
+        <button class="btn btn-sm btn-success" onclick="approveDeposit('${d.id}', '${d.userId}', ${d.amount})">Approve</button>
+        <button class="btn btn-sm btn-danger" onclick="rejectDeposit('${d.id}')">Reject</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderWithdrawals() {
+  const el = document.getElementById('pendingWithdrawsList');
+  if(!adminState.withdrawals.length) { el.innerHTML = 'No pending withdrawals'; return; }
+  
+  el.innerHTML = adminState.withdrawals.map(w => `
+    <div class="list-item">
+      <div class="list-info">
+        <div class="list-title">৳${w.amount} - ${w.userName}</div>
+        <div class="list-sub">Method: ${w.method} | Acc: ${w.account}</div>
+      </div>
+      <div style="display:flex; gap:8px;">
+        <button class="btn btn-sm btn-success" onclick="approveWithdraw('${w.id}', '${w.userId}', ${w.amount})">Approve</button>
+        <button class="btn btn-sm btn-danger" onclick="rejectWithdraw('${w.id}')">Reject</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+/* ==========================================================================
+   7. ACTIONS (CAMPAIGN & OTHERS)
+   ========================================================================== */
+function openAddCampaignModal() {
+  document.getElementById('cmpTitle').value = '';
+  document.getElementById('cmpVideoUrl').value = '';
+  document.getElementById('cmpDuration').value = '15';
+  document.getElementById('cmpReward').value = '0.50';
+  document.getElementById('addCampaignModal').classList.add('open');
+}
+
+async function submitCampaign() {
+  const title = document.getElementById('cmpTitle').value.trim();
+  const videoUrl = document.getElementById('cmpVideoUrl').value.trim();
+  const duration = Number(document.getElementById('cmpDuration').value);
+  const reward = Number(document.getElementById('cmpReward').value);
+
+  if(!title || !duration || !reward) return toast('Fill all required fields', 'error');
+
+  try {
+    await addDoc(collection(db, 'campaigns'), {
+      title, videoUrl, duration, reward,
+      active: true,
+      createdAt: serverTimestamp()
+    });
+    toast('Campaign created successfully!', 'success');
+    closeModal('addCampaignModal');
+    loadAdminData();
+  } catch(e) {
+    toast('Failed to create campaign', 'error');
+  }
+}
+
+async function deleteCampaign(id) {
+  if(!confirm('Are you sure you want to delete this campaign?')) return;
+  try {
+    await deleteDoc(doc(db, 'campaigns', id));
+    toast('Campaign deleted', 'success');
+    loadAdminData();
+  } catch(e) {
+    toast('Failed to delete', 'error');
+  }
+}
+
+async function editBalance(uid) {
+  const amtStr = prompt("Enter amount to add (or -amount to deduct):");
+  if(amtStr === null) return;
+  const amt = Number(amtStr);
+  if(isNaN(amt)) return toast('Invalid amount', 'error');
+
+  try {
+    const uRef = doc(db, 'users', uid);
+    const uSnap = await getDoc(uRef);
+    if(uSnap.exists()) {
+      const currentBal = uSnap.data().balance || 0;
+      await updateDoc(uRef, { balance: currentBal + amt });
+      toast('Balance updated', 'success');
+      loadAdminData();
+    }
+  } catch(e) { toast('Failed to update balance', 'error'); }
+}
+
+async function toggleBan(uid, currentStatus) {
+  const newStatus = currentStatus === 'banned' ? 'active' : 'banned';
+  try {
+    await updateDoc(doc(db, 'users', uid), { status: newStatus });
+    toast(`User ${newStatus}`, 'success');
+    loadAdminData();
+  } catch(e) { toast('Failed to update status', 'error'); }
+}
+
+async function approveJob(jobId) {
+  try {
+    await updateDoc(doc(db, 'jobs', jobId), { status: 'open' });
+    toast('Job approved & published', 'success');
+    loadAdminData();
+  } catch(e) { toast('Failed to approve', 'error'); }
+}
+
+async function rejectJob(jobId) {
+  try {
+    const job = adminState.jobs.find(j => j.id === jobId);
+    if(job) {
+      const refundAmount = job.price * job.workers;
+      const userRef = doc(db, 'users', job.clientId);
+      const userSnap = await getDoc(userRef);
+      if(userSnap.exists()) {
+        await updateDoc(userRef, {
+          balance: (userSnap.data().balance || 0) + refundAmount,
+          escrow: Math.max(0, (userSnap.data().escrow || 0) - refundAmount)
+        });
+      }
+    }
+    await updateDoc(doc(db, 'jobs', jobId), { status: 'rejected' });
+    toast('Job rejected & funds refunded to client', 'success');
+    loadAdminData();
+  } catch(e) { toast('Failed to reject', 'error'); }
+}
+
+async function approveService(id) {
+  try {
+    await updateDoc(doc(db, 'services', id), { status: 'approved' });
+    toast('Service approved', 'success');
+    loadAdminData();
+  } catch(e) { toast('Failed to approve', 'error'); }
+}
+
+async function rejectService(id) {
+  try {
+    await updateDoc(doc(db, 'services', id), { status: 'rejected' });
+    toast('Service rejected', 'success');
+    loadAdminData();
+  } catch(e) { toast('Failed to reject', 'error'); }
+}
+
+async function approveDeposit(depId, userId, amount) {
+  try {
+    await updateDoc(doc(db, 'deposits', depId), { status: 'approved' });
+    const uRef = doc(db, 'users', userId);
+    const uSnap = await getDoc(uRef);
+    if(uSnap.exists()) {
+      await updateDoc(uRef, { balance: (uSnap.data().balance || 0) + amount });
+    }
+    toast('Deposit approved', 'success');
+    loadAdminData();
+  } catch(e) { toast('Failed to approve', 'error'); }
+}
+
+async function rejectDeposit(depId) {
+  try {
+    await updateDoc(doc(db, 'deposits', depId), { status: 'rejected' });
+    toast('Deposit rejected', 'success');
+    loadAdminData();
+  } catch(e) { toast('Failed to reject', 'error'); }
+}
+
+async function approveWithdraw(wdId, userId, amount) {
+  try {
+    await updateDoc(doc(db, 'withdrawals', wdId), { status: 'approved' });
+    const uRef = doc(db, 'users', userId);
+    const uSnap = await getDoc(uRef);
+    if(uSnap.exists()) {
+      await updateDoc(uRef, { 
+        balance: Math.max(0, (uSnap.data().balance || 0) - amount),
+        totalWithdrawn: (uSnap.data().totalWithdrawn || 0) + amount
+      });
+    }
+    toast('Withdrawal approved', 'success');
+    loadAdminData();
+  } catch(e) { toast('Failed to approve', 'error'); }
+}
+
+async function rejectWithdraw(wdId) {
+  try {
+    await updateDoc(doc(db, 'withdrawals', wdId), { status: 'rejected' });
+    toast('Withdrawal rejected', 'success');
+    loadAdminData();
+  } catch(e) { toast('Failed to reject', 'error'); }
+}
+
+async function saveSettings() {
+  const payNum = document.getElementById('setPayNumber').value.trim();
+  const jobFee = Number(document.getElementById('setJobFee').value);
+  const dailyCap = Number(document.getElementById('setDailyCap').value);
+
+  try {
+    await setDoc(doc(db, 'settings', 'app'), {
+      paymentNumber: payNum,
+      jobPostingFee: jobFee,
+      dailyEarningCap: dailyCap
+    }, { merge: true });
+    
+    toast('Settings saved successfully', 'success');
+    loadAdminData();
+  } catch(e) { toast('Failed to save settings', 'error'); }
+}
+
+function filterUsers(query) {
+  const filtered = adminState.users.filter(u => 
+    (u.email||'').toLowerCase().includes(query.toLowerCase()) || 
+    (u.firstName || '').toLowerCase().includes(query.toLowerCase()) ||
+    (u.userId || '').toLowerCase().includes(query.toLowerCase())
+  );
+  renderUsers(filtered);
+}
+
+/* ==========================================================================
+   8. INITIALIZATION
+   ========================================================================== */
+window.addEventListener('DOMContentLoaded', () => {
+  if(sessionStorage.getItem('admin_logged_in') === 'true') {
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+    loadAdminData();
+  }
+});
+
+// Expose functions
+Object.assign(window, {
+  adminLogin, logout, nav, openAddCampaignModal, submitCampaign, deleteCampaign,
+  editBalance, toggleBan, approveJob, rejectJob, approveService, rejectService,
+  approveDeposit, rejectDeposit, approveWithdraw, rejectWithdraw,
+  saveSettings, filterUsers, closeModal
+});
+</script>
+</body>
+</html>
